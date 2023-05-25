@@ -1,9 +1,13 @@
-const canvas = document.querySelector("#game");
+const canvas = document.querySelector("#game")
 const game = canvas.getContext("2d");
-const btnUp = document.querySelector("#up");
+const btnUp = document.querySelector("#up")
 const btnLeft = document.querySelector("#left");
 const btnRight = document.querySelector("#right");
 const btnDowm = document.querySelector("#down");
+const spanLives = document.querySelector('#lives')
+const spanTime = document.querySelector('#time')
+const spanRecord = document.querySelector('#record')
+const pResult = document.querySelector('#result')
 
 const playerPosition = {
   x: undefined,
@@ -17,10 +21,14 @@ const gitPosition = {
 
 let enemyPosition = [];
 
-let canvasSize;
-let elementsSize;
+let canvasSize
+let elementsSize
 let level = 0
 let lives = 3
+
+let timeStart
+let timePlayer
+let timeInterval
 
 window.addEventListener("load", setCanvasSize);
 window.addEventListener("resize", setCanvasSize);
@@ -32,11 +40,15 @@ function setCanvasSize() {
     canvasSize = window.innerHeight * 0.8;
   }
 
+  canvasSize = Number(canvasSize.toFixed(0))
+
   canvas.setAttribute("width", canvasSize);
   canvas.setAttribute("height", canvasSize);
 
-  elementsSize = canvasSize / 10 - 1;
+  elementsSize = canvasSize / 10 - 1
 
+  playerPosition.x = undefined
+  playerPosition.y = undefined
   startGame();
 }
 
@@ -47,13 +59,23 @@ function startGame() {
   game.textAlign = "";
 
   const map = maps[level];
+
   if(!map){
     gameWin()
     return
   }
+
+  if(!timeStart){
+    timeStart = Date.now()
+    timeInterval = setInterval(showTime, 100)
+    showRecord()
+  }
+
   const mapRows = map.trim().split("\n");
   const mapRowsCols = mapRows.map((row) => row.trim().split(""));
   console.log({ map, mapRows, mapRowsCols });
+
+  showLives()
 
   game.clearRect(0, 0, canvasSize, canvasSize);
   enemyPosition = []
@@ -89,8 +111,8 @@ function startGame() {
 
 function movePLayer() {
 
-  const gitCollisionX = playerPosition.x.toFixed(2) == gitPosition.x.toFixed(2);
-  const gitCollitionY = playerPosition.y.toFixed(2) == gitPosition.y.toFixed(2);
+  const gitCollisionX = (playerPosition.x).toFixed(2) == (gitPosition.x).toFixed(2);
+  const gitCollitionY = (playerPosition.y).toFixed(2) == (gitPosition.y).toFixed(2);
   const gitCollition = gitCollisionX && gitCollitionY;
   if (gitCollition) {
     levelWin()
@@ -118,24 +140,57 @@ function levelWin() {
 
 function gameWin(){
   console.log('ganaste')
+  clearInterval(timeInterval)
+
+  const recordTime = localStorage.getItem('record_time')
+  const playerTime = Date.now() - timeStart
+
+  if(recordTime){
+    if(recordTime >= playerTime){
+      localStorage.setItem('record_time', playerTime)
+      pResult.innerHTML= 'SUPERASTE EL RECORD'
+    }else {
+      pResult.innerHTML= 'lo siento, no superaste el records'
+    }
+  }else {
+    localStorage.setItem('record_time', playerTime)
+    pResult.innerHTML= 'primera vez, supera el recor nuevamente'
+  }
+
+  console.log({recordTime, playerTime})
+}
+
+function showTime(){
+  spanTime.innerHTML = Date.now() - timeStart
+}
+
+function showRecord(){
+  spanRecord.innerHTML = localStorage.getItem('record_time')
 }
 
 function levelFalil() {
   lives--
   if(lives <= 0){
     level = 0
-    lives = 3 
+    lives = 3
+    timeStart = undefined
   }
   playerPosition.x = undefined
   playerPosition.y = undefined
   startGame()
 }
 
-window.addEventListener("keydown", moveByKeys);
-btnUp.addEventListener("click", moveUp);
-btnLeft.addEventListener("click", moveLeft);
-btnRight.addEventListener("click", moveRight);
-btnDowm.addEventListener("click", moveDown);
+function showLives(){
+  const heartsArray = Array(lives).fill(emojis['HEART'])
+  spanLives.innerHTML = ''
+  heartsArray.forEach(heart => spanLives.append(heart))
+}
+
+window.addEventListener("keydown", moveByKeys)
+btnUp.addEventListener("click", moveUp)
+btnLeft.addEventListener("click", moveLeft)
+btnRight.addEventListener("click", moveRight)
+btnDowm.addEventListener("click", moveDown)
 
 function moveByKeys(event) {
   if (event.key === "ArrowUp") moveUp();
